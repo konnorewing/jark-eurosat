@@ -8,11 +8,15 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "great-tables>=1.1.0",
+    "kaleido>=1.5.1",
     "matplotlib>=3.11.2",
     "numpy>=2.5.4",
     "pandas>=3.1.0",
+    "plotly>=7.1.0",
     "scikit-learn>=1.9.1",
     "scipy>=1.18.1",
+    "selenium>=4.53.0",
 ]
 
 [project.scripts]

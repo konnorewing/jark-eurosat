@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 import time
 import csv
 
-EPOCHS = 10
+EPOCHS = 15
  
 t_start = time.time()
 
@@ -13,7 +13,7 @@ t_start = time.time()
 
 # Load the data
 data = np.load('../data/train.npz')
-satellite_images, land_cover_labels = data['X'], data['y']
+satellite_images, land_cover_labels = data['X'].astype('float32'), data['y']
 classes = data['classes']
 
 # Normalize pixel values to be between 0 and 1
@@ -22,12 +22,23 @@ satellite_images, land_cover_labels = satellite_images / 255.0, land_cover_label
 # Split the data into train and test datasets
 train_images, test_images, train_labels, test_labels = train_test_split(satellite_images, land_cover_labels, test_size=0.2)
 
+train_images = satellite_images
+train_labels = land_cover_labels
+
+
 del data
+
+augment = keras.Sequential([
+    keras.layers.RandomFlip("horizontal_and_vertical"),
+    keras.layers.RandomRotation(0.25, fill_mode="reflect"),
+], name="augment")
 
 # 4. Train
 
 model = keras.models.Sequential([
-    keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(64, 64, 13)), # 13 spectral bands
+    keras.Input(shape=train_images.shape[1:]),    # (64, 64, 13)
+    augment,
+    keras.layers.Conv2D(32, (3, 3), activation='relu'), # 13 spectral bands
     keras.layers.MaxPooling2D((2, 2)),
     keras.layers.Dropout(0.2),
     keras.layers.Conv2D(64, (3, 3), activation='relu'),
@@ -43,7 +54,7 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # Train the model
-history = model.fit(train_images, train_labels, epochs=10, validation_data=(test_images, test_labels))
+history = model.fit(train_images, train_labels, epochs=EPOCHS, validation_data=(test_images, test_labels))
 
 test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
 print('\nTest accuracy:', test_acc)
@@ -88,3 +99,11 @@ plt.legend()
 plt.title('Training and Validation Loss')
 
 plt.show()
+
+
+from eval_metrics import report_f1, plot_confusion_percent
+
+y_pred = model.predict(X_val, batch_size=256, verbose=0).argmax(axis=1)
+report_f1(y_val, y_pred, classes, csv_path='../results/f1_report.csv')
+plot_confusion_percent(y_val, y_pred, classes, save_path='../results/confusion_matrix.png')
+

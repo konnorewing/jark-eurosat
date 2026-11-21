@@ -19,6 +19,7 @@ Runs in well under a minute on a laptop CPU. No GPU needed.
 """
 import time
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
@@ -78,11 +79,16 @@ print('  BASELINE VALIDATION ACCURACY: %.4f  (%.2f%%)' % (acc, acc * 100))
 print('=' * 46)
 print()
 
+accuracy_dict = {"overall": acc * 100}
+
 cm = confusion_matrix(yva, pred)
 rec = cm.diagonal() / cm.sum(1)
 print('per-class accuracy:')
 for i in np.argsort(rec)[::-1]:
     print('  %-22s %6.1f%%' % (classes[i], rec[i] * 100))
+    accuracy_dict[classes[i]] = rec[i] * 100
+
+pd.DataFrame([accuracy_dict]).to_csv('results/baseline_accuracy.csv', index=False)
 
 # ---------------------------------------------- 6. predict the real test set
 print('\nloading test.npz and predicting ...')
